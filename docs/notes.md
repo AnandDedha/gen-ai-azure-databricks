@@ -35,7 +35,7 @@ Customer return request → Agent retrieves order info, checks policy, possibly 
 
 ---
 
-### 3. Levels of Complexity in Gen AI Apps
+### 3. Levels of Complexity in Gen AI Apps or you can call them design patterns too
 
 1. **Standalone LLM (LLM + Prompt)** – Simple Q\&A.
 2. **Hard-coded Chains** – Deterministic steps (e.g., RAG pipeline).
