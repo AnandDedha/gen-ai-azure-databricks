@@ -2,7 +2,25 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 import faiss
 import json
-class EnterpriseRAGSystem:
+import os, mlflow.deployments
+
+def basic_llm_chat(prompt):
+    """Basic LLM interaction ; I'm using databricks model you can use your own model"""
+    try:
+        client = mlflow.deployments.get_deploy_client("databricks")
+        resp = client.predict(
+            endpoint="databricks-meta-llama-3-1-8b-instruct", # choose your chat model endpoint
+            inputs={"messages": [
+                {"role": "system", "content": "You are a concise, accurate assistant."},{"role": "user", "content": prompt},],
+                    "max_tokens": 300,
+                    "temperature": 0.2,
+                    },)
+        return resp["choices"][0]["message"]["content"]
+        
+    except Exception as e:
+        return f"Error calling LLM API: {str(e)}"
+    
+class RAGSystem:
     def __init__(self, model_name="all-MiniLM-L6-v2"):
         """Initialize RAG system with embedding model and vector store"""
         self.embedding_model = SentenceTransformer(model_name)
@@ -63,21 +81,17 @@ class EnterpriseRAGSystem:
         ])
         
         # Create RAG prompt
-        rag_prompt = f"""
-Context Information:
-{context}
-Based on the above context, please answer the following question:
-{query}
-If the context doesn't contain enough information to answer the question, please say so.
-"""
+        rag_prompt = f"""Context Information:{context} Based on the above context, please answer the following question:{query}If the context doesn't contain enough information to answer the question, please say so."""
         
         # In a real implementation, this would call your LLM
         return basic_llm_chat(rag_prompt)
-# Example: Enterprise Sales Data RAG
+          
+    
+# Sales Data RAG
 def setup_sales_rag_example():
     """Real-world example: Company sales data RAG system"""
     
-    # Sample enterprise documents
+    # Sample documents
     company_docs = [
         {
             "id": "sales_q1_2024", 
@@ -97,7 +111,7 @@ def setup_sales_rag_example():
     ]
     
     # Initialize RAG system
-    rag_system = EnterpriseRAGSystem()
+    rag_system = RAGSystem()
     rag_system.add_documents(company_docs)
     
     return rag_system
@@ -110,12 +124,12 @@ queries = [
     "What's our customer churn rate?"
 ]
 for query in queries:
-    print(f"\n🔍 Query: {query}")
+    print(f"\n Query: {query}")
     retrieved = rag_system.retrieve_context(query, top_k=2)
     
-    print("📄 Retrieved Documents:")
+    print(" Retrieved Documents:")
     for doc in retrieved:
         print(f"  • {doc['document']['id']} (relevance: {doc['relevance_score']:.2f})")
     
     response = rag_system.generate_response(query, retrieved)
-    print(f"🤖 AI Response: {response}")
+    print(f" AI Response: {response}")
